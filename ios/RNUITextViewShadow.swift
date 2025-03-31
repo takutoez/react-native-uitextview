@@ -96,6 +96,7 @@ class RNUITextViewShadow: RCTShadowView {
       var attributes: [NSAttributedString.Key:Any] = [
         .font: font,
         .foregroundColor: child.color,
+        .kern: child.letterSpacing,
       ]
 
       if child.textDecorationLine == .underline ||
