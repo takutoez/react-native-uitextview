@@ -1,20 +1,10 @@
-const path = require('path');
-const pkg = require('../package.json');
-const { configureProjects } = require('react-native-test-app');
+const path = require('path')
+const pak = require('../package.json')
 
 module.exports = {
-  project: configureProjects({
-    android: {
-      sourceDir: 'android',
-    },
-    ios: {
-      sourceDir: 'ios',
-      automaticPodsInstallation: true,
-    },
-  }),
   dependencies: {
-    [pkg.name]: {
-      root: path.join(__dirname, '..'),
-    },
-  },
-};
+    [pak.name]: {
+      root: path.join(__dirname, '..')
+    }
+  }
+}

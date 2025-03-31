@@ -1,26 +1,59 @@
 import React from 'react'
 import {
   Platform,
+  requireNativeComponent,
   StyleSheet,
-  Text as RNText,
-  type TextProps,
-  type ViewStyle
+  UIManager,
+  ViewStyle,
+  TextProps,
+  Text as RNText
 } from 'react-native'
-import RNUITextViewChildNativeComponent from './RNUITextViewChildNativeComponent'
-import RNUITextViewNativeComponent from './RNUITextViewNativeComponent'
-import {flattenStyles} from './util'
+
+const LINKING_ERROR =
+  `The package 'react-native-uitextview' doesn't seem to be linked. Make sure: \n\n` +
+  Platform.select({ios: "- You have run 'pod install'\n", default: ''}) +
+  '- You rebuilt the app after installing the package\n' +
+  '- You are not using Expo Go\n'
+
+// These props are for the main native wrapper component
+export interface RNUITextViewProps extends TextProps {
+  children: React.ReactNode
+  style: ViewStyle[]
+}
+
+// These props are for each of the children native components
+type RNUITextViewChildProps = TextProps & {
+  text: string
+  onTextPress?: (...args: any[]) => void
+  onTextLongPress?: (...args: any[]) => void
+}
+
+const RNUITextView =
+  UIManager.getViewManagerConfig?.('RNUITextView') != null
+    ? requireNativeComponent<RNUITextViewProps>('RNUITextView')
+    : () => {
+        if (Platform.OS !== 'ios') return null
+        throw new Error(LINKING_ERROR)
+      }
+export const RNUITextViewChild =
+  UIManager.getViewManagerConfig?.('RNUITextViewChild') != null
+    ? requireNativeComponent<RNUITextViewChildProps>('RNUITextViewChild')
+    : () => {
+        if (Platform.OS !== 'ios') return null
+        throw new Error(LINKING_ERROR)
+      }
 
 const TextAncestorContext = React.createContext<[boolean, ViewStyle]>([
   false,
   StyleSheet.create({})
 ])
 
+const useTextAncestorContext = () => React.useContext(TextAncestorContext)
+
 const textDefaults: TextProps = {
   allowFontScaling: true,
   selectable: true
 }
-
-const useTextAncestorContext = () => React.useContext(TextAncestorContext)
 
 function UITextViewChild({
   style,
@@ -33,28 +66,26 @@ function UITextViewChild({
 
   // Flatten the styles, and apply the root styles when needed
   const flattenedStyle = React.useMemo(
-    () => flattenStyles(rootStyle, style),
+    () => StyleSheet.flatten([rootStyle, style]),
     [rootStyle, style]
   )
 
   if (!isAncestor) {
     return (
       <TextAncestorContext.Provider value={[true, flattenedStyle]}>
-        <RNUITextViewNativeComponent
+        <RNUITextView
           {...textDefaults}
           {...rest}
-          // ellipsizeMode={rest.ellipsizeMode ?? rest.lineBreakMode ?? 'tail'}
+          ellipsizeMode={rest.ellipsizeMode ?? rest.lineBreakMode ?? 'tail'}
           style={[flattenedStyle]}
-          // @ts-expect-error Weirdness
-          onPress={undefined}
+          onPress={undefined} // We want these to go to the children only
           onLongPress={undefined}>
           {React.Children.toArray(children).map((c, index) => {
             if (React.isValidElement(c)) {
               return c
             } else if (typeof c === 'string' || typeof c === 'number') {
               return (
-                // @ts-expect-error @TODO fix this type
-                <RNUITextViewChildNativeComponent
+                <RNUITextViewChild
                   key={index}
                   style={flattenedStyle}
                   text={c.toString()}
@@ -62,9 +93,10 @@ function UITextViewChild({
                 />
               )
             }
+
             return null
           })}
-        </RNUITextViewNativeComponent>
+        </RNUITextView>
       </TextAncestorContext.Provider>
     )
   } else {
@@ -75,8 +107,7 @@ function UITextViewChild({
             return c
           } else if (typeof c === 'string' || typeof c === 'number') {
             return (
-              // @ts-expect-error @TODO fix this type
-              <RNUITextViewChildNativeComponent
+              <RNUITextViewChild
                 key={index}
                 style={flattenedStyle}
                 text={c.toString()}

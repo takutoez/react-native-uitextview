@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through'
   },
   underlinedStrikethrough: {
-    textDecorationLine: 'underline'
+    textDecorationLine: 'underline line-through'
   },
   decorationSolid: {
     textDecorationStyle: 'solid'
